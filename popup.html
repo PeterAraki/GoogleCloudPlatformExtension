@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://apis.google.com">
+    <title>Construction Categories Predictor</title>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script>
+      function init() {
+        gapi.load("auth2", function () {
+          gapi.auth2.init({
+            client_id: "38592060474-u5mlb0c3akf3q3q7rqdauqm0uio32t5j.apps.googleusercontent.com",
+            scope: "https://www.googleapis.com/auth/cloud-platform",
+          });
+        });
+      }
+    </script>
+  </head>
+  <body onload="init()">
+    <h1>Construction Categories Predictor</h1>
+    <button id="run">Run</button>
+    <button id="signin">Sign In</button>
+    <script src="popup.js"></script>
+  </body>
+</html>
