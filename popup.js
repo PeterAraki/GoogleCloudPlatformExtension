@@ -1,115 +1,47 @@
-document.getElementById("predictBtn").addEventListener("click", processText);
+// Listener for the DOM content to be loaded
 document.addEventListener("DOMContentLoaded", function () {
+  // Add click event listeners to the buttons
   document.getElementById("signin").addEventListener("click", signIn);
-});
-document.getElementById("run-button").addEventListener("click", async () => {
-  const accessToken = await fetchAccessToken();
-  if (!accessToken) {
-    alert("Please sign in to use the Construction Categories Predictor.");
-    return;
-  }
+  document.getElementById("run").addEventListener("click", async () => {
+    console.log("Attempting to fetch access token...");
+    const accessToken = await fetchAccessToken();
+    if (!accessToken) {
+      alert("Please sign in to use the Construction Categories Predictor.");
+      return;
+    }
 
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { action: "fetchData", accessToken: accessToken });
+    // Query the active tab in the current window
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      // Send a message to the content script with the access token
+      chrome.tabs.sendMessage(tabs[0].id, { action: "fetchData", accessToken: accessToken });
+    });
   });
 });
 
-function initClient() {
-  const clientId = "928581672994-a64l5no0qbprabsq2mp8sfvq54ke34sr.apps.googleusercontent.com";
-  const apiKey = "AIzaSyDx2Rqns9GjqBfr3mRH7zxBcioU8WNhHLk";
-  const scopes = "https://www.googleapis.com/auth/cloud-platform";
-
-  gapi.client.init({
-    apiKey: apiKey,
-    clientId: clientId,
-    scope: scopes,
-  }).then(() => {
-    console.log("Google API client initialized.");
-    updateSignInStatus();
-  }, (error) => {
-    console.error("Error initializing Google API Client:", error);
-  });
-}
-
+// Function to initiate the sign-in process
 function signIn() {
-  gapi.auth2.getAuthInstance().signIn();
+  console.log("Starting sign-in process...");
+  chrome.identity.getAuthToken({ interactive: true }, (token) => {
+    if (chrome.runtime.lastError) {
+      console.error(chrome.runtime.lastError);
+      return;
+    }
+    console.log("Access token (interactive):", token);
+  });
 }
 
-function signOut() {
-  gapi.auth2.getAuthInstance().signOut();
-}
-
-function updateSignInStatus() {
-  const isSignedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
-  console.log("Signed in status:", isSignedIn);
-  if (isSignedIn) {
-    document.getElementById("signInBtn").innerText = "Sign Out";
-    document.getElementById("signInBtn").onclick = signOut;
-  } else {
-    document.getElementById("signInBtn").innerText = "Sign In";
-    document.getElementById("signInBtn").onclick = signIn;
-  }
-}
-
-gapi.load("client:auth2", initClient);
-
-gapi.auth2.getAuthInstance().isSignedIn.listen(updateSignInStatus);
-function getAccessToken() {
-  return gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
-}
-
+// Function to fetch the access token
 function fetchAccessToken() {
   return new Promise((resolve) => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: "getAccessToken" }, (response) => {
-        resolve(response.accessToken);
-      });
+    console.log("Fetching access token...");
+    chrome.identity.getAuthToken({ interactive: false }, (token) => {
+      if (chrome.runtime.lastError) {
+        console.error(chrome.runtime.lastError);
+        resolve(null);
+        return;
+      }
+      console.log("Access token (non-interactive):", token);
+      resolve(token);
     });
   });
-}
-async function sendToVertexAI(text, accessToken) {
-  const projectId = "928581672994";
-  const region = "us-central1";
-  const endpointId = "7587778121793798144";
-  const apiEndpoint = "us-central1-aiplatform.googleapis.com";
-  const apiUrl = `https://${apiEndpoint}/v1/projects/${projectId}/locations/${region}/endpoints/${endpointId}:predict`;
-
-  const headers = {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${accessToken}`,
-  };
-
-  const payload = {
-    "instances": [
-      {
-        "mimeType": "text/plain",
-        "content": text,
-      },
-    ],
-  };
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: headers,
-      body: JSON.stringify(payload),
-    });
-
-    const responseData = await response.json();
-    console.log("Response data:", responseData);
-
-    const predictions = responseData.predictions || [];
-    console.log("Predictions:", predictions);
-
-    const filteredPredictions = predictions.filter((prediction) => prediction > 0.5);
-    console.log("Filtered predictions:", filteredPredictions);
-
-    const resultText = filteredPredictions.length
-      ? "Categories: " + filteredPredictions.join(", ")
-      : "No predictions found.";
-
-    alert(resultText);
-  } catch (error) {
-    console.error("Error fetching data:", error);
-  }
 }

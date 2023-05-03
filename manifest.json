@@ -4,8 +4,15 @@
   "manifest_version": 2,
   "description": "Retrieve the categories predicted for any page and print them on the page",
   "permissions": [
-    "https://cisleads.com/*"
+    "https://cisleads.com/*",
+    "identity"
   ],
+  "oauth2": {
+    "client_id": "928581672994-1l25gecbie34ol12ei31n38loqqhofug.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+  },
   "browser_action": {
     "default_popup": "popup.html"
   },
@@ -17,5 +24,5 @@
       "js": ["content.js"]
     }
   ],
-  "content_security_policy": "script-src 'self' https://apis.google.com; object-src 'self'"
+  "content_security_policy": "script-src 'self' https://apis.google.com https://*.googleusercontent.com; object-src 'self'"
 }
